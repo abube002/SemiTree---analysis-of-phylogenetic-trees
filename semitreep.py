@@ -23,8 +23,8 @@ import pdb
 '''
 input vars
 '''
-consensus = 0.8  # 0-1% cutoff per column
-min_conserved_length = 5 
+consensus = 1  # 0-1% cutoff per column
+min_conserved_length = 10 
 treefile  = 'dengue.tre' #'C:\Users\Radvilas\SkyDrive\Documents\SemiTreeData\dengue.tre'
 fastafile = 'dengue.fa' #'C:\Users\Radvilas\SkyDrive\Documents\SemiTreeData\dengue.tre'
 odfile    = ''
@@ -47,8 +47,7 @@ seq = AlignIO.read( open(fastafile),"fasta" )
 
 seq_dic = SeqIO.to_dict(seq)
 
-MSAeverycalade = MultipleSeqAlignment([]) 
-
+MSAeverycalade = MultipleSeqAlignment([])
 nonterminals = tree.get_nonterminals()
 for clnode in nonterminals:
     cladename  = str(clnode)
@@ -56,8 +55,14 @@ for clnode in nonterminals:
     if re.match("CLADE_*", cladename):
         
         
-        fasta.clear() #temp fasta list 
-        MSA = MultipleSeqAlignment([]) #temp MSA filr
+        fasta.clear() #temp fasta list
+           
+        
+        s = list()
+        del s[:] 
+        MSA = MultipleSeqAlignment(s) #temp MSA filr
+
+            
         
         #get fasta for each clade
         for cname in clnode.get_terminals():
@@ -72,29 +77,40 @@ for clnode in nonterminals:
         #print  MSA[:, len(MSA[0])-20:]
             
         myclade = Clade(cladename,clnode,fasta,MSA)
-        
+
         myclade.calculate_conservation()
 
+        myclade.find_conserved_regions(min_conserved_length,consensus)
+
+        
+        #print 'xxxENDxxx'
+        #pdb.set_trace()
+
+        
         ################################
         cladenames.append(cladename)
         cladelist.append(myclade)
         cladedict[cladename] = myclade  
         ################################
         
-        
         myclade.write_clade_to_files() # defaulf: cladename.tre, clade_name.fa      
 
-        #print 'xxxENDxxx'
-        #pdb.set_trace()
-
         MSAeverycalade.extend(MSA)
+        
+        
 
-#all_clades = Clade("ALL_CLADES",tree,allfasta,MSAeverycalade) #to calculate global conservation
-#all_clades.write_clade_to_files()        
+all_clades = Clade("ALL_CLADES",tree,allfasta,MSAeverycalade) #to calculate global conservation
 
+all_clades.calculate_conservation()
+
+all_clades.find_conserved_regions(min_conserved_length,consensus)
+
+all_clades.write_clade_to_files()        
 
 print 'Done!'
 
+#print 'xxxENDxxx'
+#pdb.set_trace()
 
 
 

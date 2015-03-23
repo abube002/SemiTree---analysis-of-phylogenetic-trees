@@ -9,6 +9,8 @@ import copy
 import pdb
 from telnetlib import theNULL
 from Bio.Phylo import Consensus
+from operator import pos
+from Canvas import Line
 
 class ConsrvBlock(object):
 
@@ -16,16 +18,18 @@ class ConsrvBlock(object):
     Length = 0      # As Integer 'how many conserved AA in block?
     strAA = ''      # As String 'conserved region AA seq (string)
     startPos = -1     # 'start position of the Block
+    strAAnogaps = ''
 
 
-    def __init__(self, nID=0, startPos=-1, strAA=""):
+    def __init__(self, nID, startPos, strAA, strAAnogaps):
         '''
         Constructor
         '''
         self.nID =nID
         self.startPos = startPos
         self.strAA = strAA
-        self.Length = len(strAA)
+        self.strAAnogaps = strAAnogaps
+        self.Length = len(strAAnogaps)
 
 
 
@@ -34,17 +38,22 @@ class Clade(object):
     classdocs
     '''
     name = ''
-    fasta = dict();
-    ConsrvRegion = list(ConsrvBlock());
+    fasta = {};
+    ConsrvRegions = []
+    rowcount = 0
+    colcount = 0
     
     MSAnogaps = MultipleSeqAlignment([]) #stores no-caped version of MSA
     
     '''Aggregates'''
     frequencies = list() 
-    mostfreqaa  = list()
+    mostfreqaa  = ''
     mostfreqsum = list()
+    ''''''''''''''''''
 
-    
+    min_len   = 5
+    consensus = 1.0  
+            
     
     
     
@@ -57,7 +66,13 @@ class Clade(object):
         self.tree      = tree
         self.fasta     = fasta
         self.MSA       = MSA
+        
+        self.rowcount  = len(fasta)
+        self.colcount  = len(self.MSA[0])
+        
         self.remove_gaps() # creates self.MSAnogaps object
+        
+        self.ConsrvRegions = [];
 
     def remove_gaps(self):
         #remove columns with all gaps
@@ -72,7 +87,7 @@ class Clade(object):
             if self.is_gap_colum(column):
                 #remove gap column
                 if (col==len(self.MSAnogaps[0])-1):
-                    print 1, self.MSAnogaps[:, :col-1]
+                    #print 1, self.MSAnogaps[:, :col-1]
                     self.MSAnogaps = self.MSAnogaps[:, :col-1]
                     pdb.set_trace()
                     
@@ -106,9 +121,10 @@ class Clade(object):
         
     def write_clade_to_files(self):
         
-        treFile   = self.name + '.tre'
-        fasFile   = self.name + '.fa'
-        fasFileNG = self.name + '_nogaps' + '.fa'
+        treFile    = self.name + '.tre'
+        fasFile    = self.name + '.fa'
+        fasFileNG  = self.name + '_nogaps' + '.fa'
+        consrvFile = self.name + '_conserved_reg' + '.txt'
         
         print self.name, "writing tree to file", treFile
         Phylo.write(self.tree, treFile, 'newick')
@@ -121,10 +137,30 @@ class Clade(object):
         output_handle2 = open(fasFileNG, "w")
         AlignIO.write(self.MSAnogaps, output_handle2, "fasta")
     
+        
+        f = open(consrvFile, "w")
+        line = "NAME: " + self.name + "\nMIN REGION LEN: " + str(self.min_len) + "\nCONSENSUS: " + str(self.consensus) + "\n\n"
+        f.write(line)
+        line = "ID\t Pos\t Len\t AA\n"
+        f.write(line)
+        for reg in self.ConsrvRegions:
+            line = str(reg.nID) + '\t ' + str(reg.startPos+1)  + '\t ' +  str(reg.Length)  + '\t ' +  reg.strAA + '\n'
+            f.write(line)
+            
+        f.close()
+ 
+    def ppptest(self):
+        if self.name == 'CLADE_WNV':
+            for reg in self.ConsrvRegions:
+                line = str(reg.nID) + '\t ' + str(reg.startPos+1)  + '\t ' +  str(reg.Length)  + '\t ' +  reg.strAA + '\n'
+                print line
+            
+    
+    
     def calculate_conservation(self):
 
         self.frequencies = []
-        self.mostfreqaa  = []
+        self.mostfreqaa  = ''
         
         matrix = [list(self.fasta[key]) for key in self.fasta] # for each fasta seq creates list of amino acids (the list of lists) 
         
@@ -154,38 +190,48 @@ class Clade(object):
                 
             maxcount = max([aminocount[key] for key in aminocount])
                            
-            #if maxcount == 1:
-            #    conservation_score = 0
-            #else:
-            
-            conservation_score = float(maxcount) / len(column)
+            if most_amino == '-':
+                conservation_score = 1
+            else:
+                conservation_score = float(maxcount) / len(column)
             
             self.frequencies.append(conservation_score)
-            self.mostfreqaa.append (most_amino)
-            print index, column, conservation_score, most_amino      
+            self.mostfreqaa += most_amino
+            #if self.name =="ALL_CLADES":
+            #    print index, column, conservation_score, most_amino      
 
+            
 
     def find_conserved_regions(self, min_len, consensus):
         
-        for f in frequencies()
-            
-        pass
-        #print self.mostfreqaa
+        nID = 0
+        bNewInProgress = False
+        #self.ConsrvRegions = ()
+        self.min_len   = min_len
+        self.consensus = float(consensus)  
+        
+        print self.name
+        for pos,frq in enumerate(self.frequencies):
+            #print pos,frq,self.mostfreqaa[pos], consensus
+            if (frq >= self.consensus): #0.9 > 0.8
+                if bNewInProgress == False:
+                    
+                    bNewInProgress = True
+                    startPos = pos
+                
+            else:
+                if bNewInProgress:
+                    bNewInProgress = False
+                    strAA = self.mostfreqaa[startPos:pos]
+                    nogaps = strAA.replace('-','')
+                    if (len(nogaps) >= min_len): #if min length of conserved region is long enough then save it to ConsrvRegion list
+                        nID += 1
+                        self.ConsrvRegions.append(ConsrvBlock(nID,startPos,strAA,nogaps))
+                        #if self.name =="ALL_CLADES":
+                        #    print nID,startPos,strAA,nogaps     
 
-'''        
-class ConsrvBlock(object):
 
-    nID = 0         # As Integer '+= 1  debug , count every conserved position recorded (number of total conserved columns)
-    Length = 0      # As Integer 'how many conserved AA in block?
-    strAA = ''      # As String 'conserved region AA seq (string)
-    startPos = -1     # 'start position of the Block
-
-
-    def __init__(self, nID=0, startPos=-1, strAA=""):
-
-
-'''         
-            
+   
             
             
             
