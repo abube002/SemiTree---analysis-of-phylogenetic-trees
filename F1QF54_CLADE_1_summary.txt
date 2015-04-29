@@ -1,0 +1,26 @@
+
+******** F1QF54 ** CLADE_1 CLADE ANALYSIS ***************
+MIN REGION LEN: 4
+CONSENSUS: 0.9
+Shortest AA Length=636
+Longest AA Length=653
+CLADE Total Length=668
+Rate4Site Alpha= 0.453947
+---------------------------------------------------
+Amino Acid Conservation, number of conserved regions:26
+Amino Acid Conservation, Mean:0.826715686275
+Amino Acid Conservation, STD:0.221350941781
+Amino Acid Conservation, Alpha:13.9492098562
+---------------------------------------------------
+Amino Acid Entropy, Mean:0.664018349104
+Amino Acid Entropy, STD:0.774428355859
+Amino Acid Entropy, Alpha:0.735186745069
+---------------------------------------------------
+Physicochemical Conservation, number of conserved regions:29
+Physicochemical Conservation, Mean:0.90318627451
+Physicochemical Conservation, STD:0.18145781647
+Physicochemical Conservation, Alpha:24.7744086551
+---------------------------------------------------
+O/D Conservation, Mean:0.927145708583
+O/D Conservation, STD:0.171809293094
+O/D Conservation, Alpha:29.1207585209
